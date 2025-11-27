@@ -8,6 +8,9 @@
 
 void ctensors_fclose(const ctensors_table_t* table)
 {
-    if (table->content.kind == ctensors_with_fd && table->content.storage.fd)
-        fclose(table->content.storage.fd);
+    if (table != nullptr)
+    {
+        if (table->content.kind == ctensors_with_fd && table->content.storage.fd)
+            fclose(table->content.storage.fd);
+    }
 }

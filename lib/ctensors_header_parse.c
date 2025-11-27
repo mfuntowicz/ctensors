@@ -120,7 +120,7 @@ int32_t ctensors_header_parse(ctensors_table_t* table, const char* header, const
 
             if (rank > 0) {
                 //TODO : Add malloc checking
-                tensor->shape = calloc(rank + 1, sizeof(uint32_t));
+                tensor->shape = calloc(rank, sizeof(uint32_t));
                 if (!tensor->shape) {
                     free(tensor->name);
                     for (int32_t i = 0; i < num_tensors; i++) {

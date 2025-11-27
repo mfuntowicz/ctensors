@@ -9,6 +9,7 @@ set(CTENSORS_HEADERS
         lib/ctensors.h
         lib/ctensors_types.h
         lib/ctensors_fopen.h
+        lib/ctensors_fclose.h
         lib/ctensors_fread_table.h
         lib/ctensors_header_parse.h
         lib/ctensors_mmap.h
@@ -18,14 +19,14 @@ set(CTENSORS_HEADERS
 
 set(CTENSORS_SOURCES
         lib/ctensors_fopen.c
+        lib/ctensors_fclose.c
         lib/ctensors_fread_table.c
         lib/ctensors_header_parse.c
         lib/ctensors_mmap.c
         lib/ctensors_mmap_table.c
         lib/ctensors_types.c
         lib/ctensors_table_read.c
-        lib/ctensors_table_get_tensor.c
-        lib/ctensors_fclose.c)
+        lib/ctensors_table_get_tensor.c)
 
 add_library(ctensors ${CTENSORS_HEADERS} ${CTENSORS_SOURCES})
 set_property(TARGET ctensors PROPERTY C_STANDARD 23)

@@ -27,6 +27,7 @@ int64_t ctensors_mmap(const char* path, ctensors_table_t* table, ctensors_flags_
     struct stat sb;
     if (fstat(fd, &sb) == -1) {
         perror("Error getting file size");
+        close(fd);
 
         // TODO: Better error handling
         return -1;
@@ -34,6 +35,7 @@ int64_t ctensors_mmap(const char* path, ctensors_table_t* table, ctensors_flags_
 
     if (sb.st_size == 0) {
         fprintf(stderr, "File is empty\n");
+        close(fd);
 
         // TODO: Better error handling
         return -1;
@@ -44,6 +46,7 @@ int64_t ctensors_mmap(const char* path, ctensors_table_t* table, ctensors_flags_
     char *content = mmap(NULL, sb.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
     if (content == MAP_FAILED) {
         perror("Error mmapping the file");
+        close(fd);
 
         // TODO: Better error handling
         return -1;

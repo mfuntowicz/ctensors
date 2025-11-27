@@ -19,20 +19,24 @@ int64_t ctensors_mmap(const char* path, ctensors_table_t* table, ctensors_flags_
     const int fd = open(path, O_RDONLY);
     if (fd == -1) {
         perror("Error opening file");
-        return 1;
+
+        // TODO: Better error handling
+        return -1;
     }
 
     struct stat sb;
     if (fstat(fd, &sb) == -1) {
         perror("Error getting file size");
-        close(fd);
-        return 1;
+
+        // TODO: Better error handling
+        return -1;
     }
 
     if (sb.st_size == 0) {
         fprintf(stderr, "File is empty\n");
-        close(fd);
-        return 1;
+
+        // TODO: Better error handling
+        return -1;
     }
 
     // 3. Map the file into memory
@@ -40,14 +44,15 @@ int64_t ctensors_mmap(const char* path, ctensors_table_t* table, ctensors_flags_
     char *content = mmap(NULL, sb.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
     if (content == MAP_FAILED) {
         perror("Error mmapping the file");
-        return 1;
+
+        // TODO: Better error handling
+        return -1;
     }
 
     table->content.kind = ctensors_with_mmap;
     table->content.storage.mmap = content;
 
     return ctensors_mmap_table(table, flags);
-;
 #else
 // Windows logic (using CreateFileMapping, etc.)
 assert(false && "Windows is not supported yet.")

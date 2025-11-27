@@ -9,7 +9,7 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #else
-assert(false && "Windows is not supported yet.")
+#error("Windows is not supported yet.")
 #endif
 
 
@@ -58,6 +58,6 @@ int64_t ctensors_mmap(const char* path, ctensors_table_t* table, ctensors_flags_
     return ctensors_mmap_table(table, flags);
 #else
 // Windows logic (using CreateFileMapping, etc.)
-assert(false && "Windows is not supported yet.")
+#error("Windows is not supported yet.")
 #endif
 }

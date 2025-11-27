@@ -24,7 +24,8 @@ set(CTENSORS_SOURCES
         lib/ctensors_mmap_table.c
         lib/ctensors_types.c
         lib/ctensors_table_read.c
-        lib/ctensors_table_get_tensor.c)
+        lib/ctensors_table_get_tensor.c
+        lib/ctensors_fclose.c)
 
 add_library(ctensors ${CTENSORS_HEADERS} ${CTENSORS_SOURCES})
 set_property(TARGET ctensors PROPERTY C_STANDARD 23)

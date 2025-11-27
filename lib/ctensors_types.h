@@ -86,4 +86,23 @@ typedef struct ctensors_table_t
     ctensors_tensor_t* tensors;
 } ctensors_table_t;
 
+
+/// Indicate if the ctensors was opened through `mmap`
+/// @param table The table holding the underlying content
+/// @return `true` if not-null and opened through `mmap`, `false` otherwise
+static inline bool ctensors_table_is_mmap(const ctensors_table_t* table)
+{
+    if (table) return table->content.kind == ctensors_with_mmap;
+    return false;
+}
+
+/// Indicate if the ctensors was opened through `fopen`
+/// @param table The table holding the underlying content
+/// @return `true` if not-null and opened through `fopen`, `false` otherwise
+static inline bool ctensors_table_is_fd(const ctensors_table_t* table)
+{
+    if (table) return table->content.kind == ctensors_with_fd;
+    return false;
+}
+
 #endif // CTENSORS_TYPES_H

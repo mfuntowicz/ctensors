@@ -23,6 +23,7 @@ typedef enum
 /// @param hsize The number of chars in the header
 /// @param flags Flags to control the actual reading
 /// @return Number of tensors discovered or error if < 0
-int32_t safetensors_header_parse(safetensors_table_t* table, const char* header, size_t hsize, safetensors_flags_t flags);
+struct safetensors_status safetensors_header_parse(
+    struct safetensors_table* table, const char* header, size_t hsize, enum safetensors_flags flags);
 
 #endif //SAFETENSORS_FREAD_HEADER_H

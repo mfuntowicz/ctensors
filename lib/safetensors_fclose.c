@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include "safetensors_types.h"
 
-void safetensors_fclose(const safetensors_table_t* table)
+void safetensors_fclose(const safetensors_table* table)
 {
     if (table != nullptr)
     {

@@ -12,6 +12,6 @@
 /// Read the tensor table definition from the specified stream
 /// @param flags
 /// @return
-int64_t safetensors_fread_table(safetensors_table_t* table, safetensors_flags_t flags);
+int64_t safetensors_fread_table(struct safetensors_table *table, enum safetensors_flags flags);
 
 #endif //SAFETENSORS_FREAD_TABLE_H

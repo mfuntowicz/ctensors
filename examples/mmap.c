@@ -26,34 +26,33 @@ int main(const int argc, const char** argv)
     }
 
     // Open the target safetensors file
-    const auto table = ctensors_table_init();
-    int32_t num_tensors;
+    const auto table = safetensors_table_init();
 
     // Benchmark ctensors_fopen
     BENCHMARK("ctensors_mmap", {
-        num_tensors = ctensors_mmap(argv[1], table, ctensors_skip_metadata);
+        const auto status = safetensors_mmap(argv[1], table, safetensors_skip_metadata);
     });
 
-    if (num_tensors > 0)
+    if (table->num_tensors > 0)
     {
-        printf("\t-> loaded %d tensors\n", num_tensors);
+        printf("\t-> loaded %d tensors\n", table->num_tensors);
 
-        const auto lastname = table->names[num_tensors - 1];
-        const ctensors_tensor_t* t;
+        const auto lastname = table->names[table->num_tensors - 1];
+        const struct safetensors_tensor* t;
 
         // Benchmark ctensors_table_get_tensor
         BENCHMARK("ctensors_table_get_tensor", {
-            t = ctensors_table_get_tensor(table, lastname);
+            t = safetensors_table_get_tensor(table, lastname);
         });
 
-        if (t) printf("\t-> tensor %s: dtype=%s, rank=%d, start=%lu, end=%lu\n", lastname, ctensors_dtype_as_str(t->dtype), t->rank, t->start, t->end);
+        if (t) printf("\t-> tensor %s: dtype=%s, rank=%d, start=%lu, end=%lu\n", lastname, safetensors_dtype_as_str(t->dtype), t->rank, t->start, t->end);
         else printf("\t-> {%s} was not found\n", lastname);
 
-        ctensors_table_free(table);
+        safetensors_table_free(table);
         return 0;
     }
 
     printf("Failed to read safetensors %s\n", argv[1]);
-    ctensors_table_free(table);
+    safetensors_table_free(table);
     return -1;
 }

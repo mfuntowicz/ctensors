@@ -1,9 +1,11 @@
 #ifndef SAFETENSORS_MMAP_H
 #define SAFETENSORS_MMAP_H
-#include <stdint.h>
 
-#include "safetensors_types.h"
+#if defined(__linux__) || defined(__unix__) || defined(__APPLE__)
+#include "safetensors_mmap_unix.h"
+#else
+#error("Windows is not supported yet.")
+#endif
 
-int64_t safetensors_mmap(const char* path, safetensors_table_t* table, safetensors_flags_t flags);
 
 #endif // SAFETENSORS_MMAP_H

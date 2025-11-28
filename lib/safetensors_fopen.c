@@ -11,7 +11,7 @@ assert(false && "Windows is not supported yet.")
 
 #include "safetensors_fread_table.h"
 
-int64_t safetensors_fopen(const char* path, safetensors_table_t* table, safetensors_flags_t flags)
+int64_t safetensors_fopen(const char* path, safetensors_table* table, safetensors_flags flags)
 {
     FILE* fs;
     if ((fs = fopen(path, "rb")) == NULL)

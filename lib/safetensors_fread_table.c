@@ -10,7 +10,7 @@
 #include "safetensors_table_read.h"
 
 
-int64_t safetensors_fread_table(safetensors_table_t* table, const safetensors_flags_t flags)
+int64_t safetensors_fread_table(safetensors_table* table, const safetensors_flags flags)
 {
     // Read the size of the header JSON string
     // TODO: Always Little-Ending, should we do something smarter here?

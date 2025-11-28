@@ -8,161 +8,187 @@
 #include <string.h>
 #include <yyjson.h>
 
-int32_t safetensors_header_parse(safetensors_table_t* table, const char* header, const size_t hsize, const safetensors_flags_t flags)
-{
-    int32_t num_tensors = 0;
-    int32_t num_allocated_tensors = 2048;
-    table->names = malloc(num_allocated_tensors * sizeof(table->names));
-    table->tensors = malloc(num_allocated_tensors * sizeof(table->tensors));
+#include "safetensors_errors.h"
+#include "safetensors_types.h"
 
-    if (!table->tensors) {
-        return safetensors_headers_alloc_failed;
+enum safetensors_status_code safetensors_header_parse_dtype(
+    yyjson_val *dtype, struct safetensors_tensor *tensor, struct safetensors_status *status)
+{
+    if (dtype && yyjson_is_str(dtype)) {
+        const char* dtype_str = yyjson_get_str(dtype);
+        const size_t dtype_len = yyjson_get_len(dtype);
+        tensor->dtype = safetensors_parse_dtype_from_str(dtype_str, dtype_len);
     }
+    else {
+        tensor->dtype = SAFETENSORS_UNKNOWN;
+    }
+
+    if (tensor->dtype == SAFETENSORS_UNKNOWN) {
+        status->what = SAFETENSORS_UNKNOWN_DTYPE;
+        status->message = "Unknown dtype";
+    }
+
+    return status->what;
+}
+
+enum safetensors_status_code safetensors_header_parse_offsets(
+    yyjson_val *offsets, struct safetensors_tensor *tensor, struct safetensors_status *status)
+{
+    if (offsets && yyjson_is_arr(offsets)) {
+        const size_t length = yyjson_arr_size(offsets);
+        if (length >= 2) {
+            yyjson_val* start_val = yyjson_arr_get(offsets, 0);
+            yyjson_val* end_val = yyjson_arr_get(offsets, 1);
+
+            if (yyjson_is_uint(start_val)) {
+                tensor->start = yyjson_get_uint(start_val);
+            }
+            if (yyjson_is_uint(end_val)) {
+                tensor->end = yyjson_get_uint(end_val);
+            }
+
+            return SAFETENSORS_SUCCESS;
+        }
+
+        status->what = SAFETENSORS_HEADER_INVALID;
+        status->message = "Expected length 2 array (begin, end)";
+    } else {
+        status->what = SAFETENSORS_HEADER_INVALID;
+        status->message = "Expected offsets to be represented as an array";
+    }
+    return status->what;
+}
+
+enum safetensors_status_code safetensors_header_parse_shape(
+    yyjson_val *shape, struct safetensors_tensor *tensor, struct safetensors_status *status)
+{
+    if (shape && yyjson_is_arr(shape)) {
+        const size_t rank = yyjson_arr_size(shape);
+        tensor->rank = (uint8_t)rank;
+
+        if (rank > 0) {
+            //TODO : Add malloc checking
+            if ((tensor->shape = calloc(rank, sizeof(uint32_t))) == nullptr) {
+                status->what = SAFETENSORS_ALLOCATION_FAILED;
+                status->message = "Failed to allocate memory to store tensor's shape";
+            }
+
+            size_t shape_idx = 0, shape_max = 0;
+            yyjson_val* dim_val;
+            yyjson_arr_foreach(shape, shape_idx, shape_max, dim_val) {
+                if (yyjson_is_uint(dim_val)) {
+                    tensor->shape[shape_idx] = (uint32_t)yyjson_get_uint(dim_val);
+                }
+            }
+            return SAFETENSORS_SUCCESS;
+        } else {
+            tensor->shape = nullptr;
+            return SAFETENSORS_SUCCESS;
+        }
+    } else {
+        status->what = SAFETENSORS_HEADER_INVALID;
+        status->message = "Expected shape to be an array of integers";
+        return SAFETENSORS_HEADER_INVALID;
+    }
+}
+
+enum safetensors_status_code safetensors_header_parse_tensor(
+    yyjson_val *specs, struct safetensors_tensor *tensor, struct safetensors_status *status)
+{
+    // Parse dtype
+    yyjson_val* dtype_val = yyjson_obj_get(specs, "dtype");
+    if (safetensors_header_parse_dtype(dtype_val, tensor, status) != SAFETENSORS_SUCCESS) return status->what;
+
+    // Parse shape
+    yyjson_val* shape_val = yyjson_obj_get(specs, "shape");
+    if (safetensors_header_parse_shape(shape_val, tensor, status) != SAFETENSORS_SUCCESS) return status->what;
+
+    // Parse offsets
+    yyjson_val* data_offsets_val = yyjson_obj_get(specs, "data_offsets");
+    return safetensors_header_parse_offsets(data_offsets_val, tensor, status);
+}
+
+struct safetensors_status safetensors_header_parse(
+    struct safetensors_table *table, const char *header, const size_t hsize, const enum safetensors_flags flags)
+{
+    struct safetensors_status status = {0};
 
     // Parse JSON
-    yyjson_doc* document = yyjson_read(header, hsize, YYJSON_READ_NOFLAG);
+    yyjson_read_err error;
+    yyjson_doc *document = yyjson_read_opts(header, hsize, YYJSON_READ_NOFLAG, nullptr, &error);
     if (!document) {
-        free(table->tensors);
-        return safetensors_header_invalid_starting_char;
+        status.what = SAFETENSORS_HEADER_JSON_ERROR;
+        status.message = error.msg;
+        goto freeup_and_return;
     }
 
-    yyjson_val* root = yyjson_doc_get_root(document);
+    yyjson_val *root = yyjson_doc_get_root(document);
     if (!yyjson_is_obj(root)) {
-        yyjson_doc_free(document);
-        free(table->tensors);
-        return safetensors_header_invalid_starting_char;
+        status.what = SAFETENSORS_HEADER_JSON_ERROR;
+        status.message = error.msg;
+        goto freeup_and_return;
+    }
+
+    table->num_tensors = yyjson_obj_size(root);
+    if ((table->names = calloc(table->num_tensors, sizeof(char*))) == nullptr) {
+        status.what = SAFETENSORS_ALLOCATION_FAILED;
+        status.message = "Failed to allocated memory to store tensor's names";
+    }
+
+    if ((table->tensors = calloc(table->num_tensors, sizeof(struct safetensors_tensor))) == nullptr) {
+        status.what = SAFETENSORS_ALLOCATION_FAILED;
+        status.message = "Failed to allocated memory to store tensor's descriptor";
     }
 
     size_t idx, max;
     yyjson_val *key, *val;
     yyjson_obj_foreach(root, idx, max, key, val) {
-        const char* tensor_name = yyjson_get_str(key);
+        const char *keyval = yyjson_get_str(key);
 
         // Skip __metadata__ if the flag is set
-        if (strcmp(tensor_name, "__metadata__") == 0) {
-            if (flags & safetensors_skip_metadata) {
-                continue;
-            }
-            // TODO: not impl yet ;
-        }
+        if (strcmp(keyval, "__metadata__") == 0)
+            if (!(flags & safetensors_skip_metadata)) { /* TODO: Not implemented yet */ }
 
-        // Check if we need to resize the tensor array
-        if (num_tensors >= num_allocated_tensors) {
-            num_allocated_tensors *= 2;
-            safetensors_tensor_t* new_tensors = realloc(table->tensors, num_allocated_tensors * sizeof(safetensors_tensor_t));
-            if (!new_tensors) {
-                // Cleanup on failure
-                for (int32_t i = 0; i < num_tensors; i++) {
-                    free(table->tensors[i].shape);
-                }
-                free(table->tensors);
-                yyjson_doc_free(document);
-                return safetensors_headers_alloc_failed;
-            }
-            table->tensors = new_tensors;
-        }
-
-        char* name = table->names[num_tensors];
-        safetensors_tensor_t* tensor = &table->tensors[num_tensors];
-
-        // Create the finale tensor name with a null-terminator string to allow usage of str functions like strncmp
+        // Create the final tensor name with a null-terminator string to allow usage of str functions like strncmp
         const size_t name_len = yyjson_get_len(key);
-
-        // TODO: check calloc returns
-        name = calloc(name_len + 1, sizeof(char));
-        if (!name) {
-            for (int32_t i = 0; i < num_tensors; i++) {
-                free(table->tensors[i].shape);
-            }
-            free(table->tensors);
-            yyjson_doc_free(document);
-            return safetensors_headers_alloc_failed;
+        if ((table->names[idx] = calloc(name_len + 1, sizeof(char))) == nullptr) {
+            status.what = SAFETENSORS_ALLOCATION_FAILED;
+            status.message = "Failed to allocated memory to store tensor's name";
+            goto freeup_and_return;
         }
-        strncpy(name, tensor_name, name_len);
+
+        // TODO: Shall we copy the string here? Or just keep track of the pointer?
+        strncpy(table->names[idx], keyval, name_len);
 
         // Parse tensor object
         if (!yyjson_is_obj(val)) {
-            free(name);
-            continue;
+            status.what = SAFETENSORS_HEADER_INVALID;
+            status.message = "Expected JSON object";
+            goto freeup_and_return;
         }
 
-        yyjson_val* dtype_val = yyjson_obj_get(val, "dtype");
-        yyjson_val* data_offsets_val = yyjson_obj_get(val, "data_offsets");
-        yyjson_val* shape_val = yyjson_obj_get(val, "shape");
+        if (safetensors_header_parse_tensor(val, table->tensors + idx, &status) != SAFETENSORS_SUCCESS)
+            goto freeup_and_return;
 
-        // Parse dtype
-        if (dtype_val && yyjson_is_str(dtype_val)) {
-            const char* dtype_str = yyjson_get_str(dtype_val);
-            const size_t dtype_len = yyjson_get_len(dtype_val);
-            tensor->dtype = safetensors_parse_dtype_from_str(dtype_str, dtype_len);
-        } else {
-            tensor->dtype = safetensors_unknown;
-        }
 
-        // Parse data_offsets [start, end]
-        if (data_offsets_val && yyjson_is_arr(data_offsets_val)) {
-            const size_t length = yyjson_arr_size(data_offsets_val);
-            if (length >= 2) {
-                yyjson_val* start_val = yyjson_arr_get(data_offsets_val, 0);
-                yyjson_val* end_val = yyjson_arr_get(data_offsets_val, 1);
+        const auto tensor = table->tensors[idx];
+        printf(
+            "Discovered tensor %s (%s) -> start: %lu, end: %lu\n",
+            table->names[idx], safetensors_dtype_as_str(tensor.dtype), tensor.start, tensor.end);
 
-                if (yyjson_is_uint(start_val)) {
-                    tensor->start = yyjson_get_uint(start_val);
-                }
-                if (yyjson_is_uint(end_val)) {
-                    tensor->end = yyjson_get_uint(end_val);
-                }
-            }
-        }
-
-        // Parse shape
-        if (shape_val && yyjson_is_arr(shape_val)) {
-            const size_t rank = yyjson_arr_size(shape_val);
-            tensor->rank = (uint8_t)rank;
-
-            if (rank > 0) {
-                //TODO : Add malloc checking
-                tensor->shape = calloc(rank, sizeof(uint32_t));
-                if (!tensor->shape) {
-                    free(name);
-                    for (int32_t i = 0; i < num_tensors; i++) {
-                        free(table->tensors[i].shape);
-                    }
-                    free(table->tensors);
-                    yyjson_doc_free(document);
-                    return safetensors_headers_alloc_failed;
-                }
-
-                size_t shape_idx = 0, shape_max = 0;
-                yyjson_val* dim_val;
-                yyjson_arr_foreach(shape_val, shape_idx, shape_max, dim_val) {
-                    if (yyjson_is_uint(dim_val)) {
-                        tensor->shape[shape_idx] = (uint32_t)yyjson_get_uint(dim_val);
-                    }
-                }
-            } else {
-                tensor->shape = nullptr;
-            }
-        } else {
-            tensor->rank = 0;
-            tensor->shape = nullptr;
-        }
-
-        num_tensors++;
     }
 
-    yyjson_doc_free(document);
+    return SAFETENSORS_SUCCEEDED;
 
-    // Resize to the exact size if we over-allocated
-    if (num_tensors < num_allocated_tensors && num_tensors > 0) {
-        safetensors_tensor_t* final_tensors = realloc(table->tensors, num_tensors * sizeof(safetensors_tensor_t));
-        char** names = realloc(table->names, num_tensors * sizeof(char*));
+freeup_and_return:
+    if (document != nullptr)
+        yyjson_doc_free(document);
 
-        if (final_tensors) table->tensors = final_tensors;
-        if (names) table->names = names;
-        // TODO: If realloc fails,
-    }
+    if (table->tensors)
+        free(table->tensors);
 
-    table->num_tensors = num_tensors;
-    return num_tensors;
+    if (table->names)
+        for (size_t i = 0; i < table->num_tensors; ++i) free(table->names[i]);
+
+    return status;
 }

@@ -16,7 +16,7 @@ int find_tensor_by_name(const void* key, const void* name)
 }
 
 
-safetensors_tensor_t* safetensors_table_get_tensor(const safetensors_table_t* table, const char* name)
+struct safetensors_tensor *safetensors_table_get_tensor(const struct safetensors_table *table, const char* name)
 {
     if (table->num_tensors > 0)
     {

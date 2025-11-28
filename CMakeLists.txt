@@ -12,23 +12,26 @@ option(SAFETENSORS_BUILD_EXAMPLES "Build the provided examples" OFF)
 
 set(SAFETENSORS_HEADERS
         lib/safetensors.h
+        lib/safetensors_errors.h
         lib/safetensors_types.h
-        lib/safetensors_fopen.h
-        lib/safetensors_fclose.h
-        lib/safetensors_fread_table.h
+#        lib/safetensors_fopen.h
+#        lib/safetensors_fclose.h
+#        lib/safetensors_fread_table.h
         lib/safetensors_header_parse.h
         lib/safetensors_mmap.h
         lib/safetensors_mmap_table.h
+        lib/safetensors_mmap_unix.h
         lib/safetensors_table_read.h
         lib/safetensors_table_get_tensor.h)
 
 set(SAFETENSORS_SOURCES
-        lib/safetensors_fopen.c
-        lib/safetensors_fclose.c
-        lib/safetensors_fread_table.c
+        lib/safetensors_errors.c
+#        lib/safetensors_fopen.c
+#        lib/safetensors_fclose.c
+#        lib/safetensors_fread_table.c
         lib/safetensors_header_parse.c
-        lib/safetensors_mmap.c
         lib/safetensors_mmap_table.c
+        lib/safetensors_mmap_unix.c
         lib/safetensors_types.c
         lib/safetensors_table_read.c
         lib/safetensors_table_get_tensor.c)

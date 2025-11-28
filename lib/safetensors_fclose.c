@@ -6,11 +6,11 @@
 #include <stdio.h>
 #include "safetensors_types.h"
 
-void safetensors_fclose(const ctensors_table_t* table)
+void safetensors_fclose(const safetensors_table_t* table)
 {
     if (table != nullptr)
     {
-        if (table->content.kind == ctensors_with_fd && table->content.storage.fd)
+        if (table->content.kind == safetensors_with_fd && table->content.storage.fd)
             fclose(table->content.storage.fd);
     }
 }

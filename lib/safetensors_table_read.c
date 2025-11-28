@@ -2,11 +2,11 @@
 #include "safetensors_table_read.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 int compare_strings (const void *a, const void *b) {
     return strcmp(*(char **)a, *(char **)b);
 }
-
 
 int32_t safetensors_table_read(safetensors_table_t* table, const char* header, const size_t size, const safetensors_flags_t flags)
 {

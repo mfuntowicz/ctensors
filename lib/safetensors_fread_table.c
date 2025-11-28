@@ -2,15 +2,15 @@
 // Created by mfuntowicz on 11/25/25.
 //
 
-#include "ctensors_fread_table.h"
+#include "safetensors_fread_table.h"
 
 #include <stdlib.h>
 
-#include "ctensors_header_parse.h"
-#include "ctensors_table_read.h"
+#include "safetensors_header_parse.h"
+#include "safetensors_table_read.h"
 
 
-int64_t ctensors_fread_table(ctensors_table_t* table, const ctensors_flags_t flags)
+int64_t safetensors_fread_table(safetensors_table_t* table, const safetensors_flags_t flags)
 {
     // Read the size of the header JSON string
     // TODO: Always Little-Ending, should we do something smarter here?
@@ -30,7 +30,7 @@ int64_t ctensors_fread_table(ctensors_table_t* table, const ctensors_flags_t fla
     }
 
     // TODO: Better handling parsing error
-    ctensors_table_read(table, header_json_content, hsize, flags);
+    safetensors_table_read(table, header_json_content, hsize, flags);
 
     // Free the JSON header string, we don't need it from now on
     free(header_json_content);

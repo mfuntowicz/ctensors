@@ -7,11 +7,11 @@
 assert(false && "Windows is not supported yet.")
 #endif
 
-#include "ctensors_fopen.h"
+#include "safetensors_fopen.h"
 
-#include "ctensors_fread_table.h"
+#include "safetensors_fread_table.h"
 
-int64_t ctensors_fopen(const char* path, ctensors_table_t* table, ctensors_flags_t flags)
+int64_t safetensors_fopen(const char* path, safetensors_table_t* table, safetensors_flags_t flags)
 {
     FILE* fs;
     if ((fs = fopen(path, "rb")) == NULL)
@@ -21,7 +21,7 @@ int64_t ctensors_fopen(const char* path, ctensors_table_t* table, ctensors_flags
 
     // Read the header table from the stream
     // Return the table
-    table->content.kind = ctensors_with_fd;
+    table->content.kind = safetensors_with_fd;
     table->content.storage.fd = fs;
-    return ctensors_fread_table(table, flags);
+    return safetensors_fread_table(table, flags);
 }

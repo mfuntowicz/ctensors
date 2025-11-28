@@ -1,12 +1,12 @@
 //
 // Created by mfuntowicz on 11/27/25.
 //
-#include "ctensors_fclose.h"
+#include "safetensors_fclose.h"
 
 #include <stdio.h>
-#include "ctensors_types.h"
+#include "safetensors_types.h"
 
-void ctensors_fclose(const ctensors_table_t* table)
+void safetensors_fclose(const ctensors_table_t* table)
 {
     if (table != nullptr)
     {

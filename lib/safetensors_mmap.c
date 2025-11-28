@@ -1,7 +1,7 @@
-#include "ctensors_mmap.h"
+#include "safetensors_mmap.h"
 #include <stdio.h>
 
-#include "ctensors_mmap_table.h"
+#include "safetensors_mmap_table.h"
 
 #if defined(__linux__) || defined(__unix__) || defined(__APPLE__)
 #include <unistd.h>
@@ -13,7 +13,7 @@
 #endif
 
 
-int64_t ctensors_mmap(const char* path, ctensors_table_t* table, ctensors_flags_t flags)
+int64_t safetensors_mmap(const char* path, safetensors_table_t* table, safetensors_flags_t flags)
 {
 #if defined(__linux__) || defined(__unix__) || defined(__APPLE__)
     const int fd = open(path, O_RDONLY);
@@ -52,10 +52,10 @@ int64_t ctensors_mmap(const char* path, ctensors_table_t* table, ctensors_flags_
         return -1;
     }
 
-    table->content.kind = ctensors_with_mmap;
+    table->content.kind = safetensors_with_mmap;
     table->content.storage.mmap = content;
 
-    return ctensors_mmap_table(table, flags);
+    return safetensors_mmap_table(table, flags);
 #else
 // Windows logic (using CreateFileMapping, etc.)
 #error("Windows is not supported yet.")

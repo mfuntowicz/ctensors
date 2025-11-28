@@ -1,36 +1,41 @@
 cmake_minimum_required(VERSION 3.24)
-project(ctensors VERSION 1.0.0 LANGUAGES C)
+project(libsafetensors VERSION 1.0.0 LANGUAGES C)
+
+set(CMAKE_C_STANDARD 23)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS OFF)
+set(CMAKE_C_VISIBILITY_PRESET hidden)
 
 include(FetchContent)
 
-option(CTENSORS_BUILD_EXAMPLES "Build the provided examples" OFF)
+option(SAFETENSORS_BUILD_EXAMPLES "Build the provided examples" OFF)
 
-set(CTENSORS_HEADERS
-        lib/ctensors.h
-        lib/ctensors_types.h
-        lib/ctensors_fopen.h
-        lib/ctensors_fclose.h
-        lib/ctensors_fread_table.h
-        lib/ctensors_header_parse.h
-        lib/ctensors_mmap.h
-        lib/ctensors_mmap_table.h
-        lib/ctensors_table_read.h
-        lib/ctensors_table_get_tensor.h)
+set(SAFETENSORS_HEADERS
+        lib/safetensors.h
+        lib/safetensors_types.h
+        lib/safetensors_fopen.h
+        lib/safetensors_fclose.h
+        lib/safetensors_fread_table.h
+        lib/safetensors_header_parse.h
+        lib/safetensors_mmap.h
+        lib/safetensors_mmap_table.h
+        lib/safetensors_table_read.h
+        lib/safetensors_table_get_tensor.h)
 
-set(CTENSORS_SOURCES
-        lib/ctensors_fopen.c
-        lib/ctensors_fclose.c
-        lib/ctensors_fread_table.c
-        lib/ctensors_header_parse.c
-        lib/ctensors_mmap.c
-        lib/ctensors_mmap_table.c
-        lib/ctensors_types.c
-        lib/ctensors_table_read.c
-        lib/ctensors_table_get_tensor.c)
+set(SAFETENSORS_SOURCES
+        lib/safetensors_fopen.c
+        lib/safetensors_fclose.c
+        lib/safetensors_fread_table.c
+        lib/safetensors_header_parse.c
+        lib/safetensors_mmap.c
+        lib/safetensors_mmap_table.c
+        lib/safetensors_types.c
+        lib/safetensors_table_read.c
+        lib/safetensors_table_get_tensor.c)
 
-add_library(ctensors ${CTENSORS_HEADERS} ${CTENSORS_SOURCES})
-set_property(TARGET ctensors PROPERTY C_STANDARD 23)
-target_include_directories(ctensors PUBLIC
+add_library(safetensors ${SAFETENSORS_HEADERS} ${SAFETENSORS_SOURCES})
+set_property(TARGET safetensors PROPERTY C_STANDARD 23)
+target_include_directories(safetensors PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/lib>
     $<INSTALL_INTERFACE:include>
 )
@@ -46,12 +51,12 @@ fetchcontent_getproperties(yyjson)
 fetchcontent_makeavailable(yyjson)
 
 # Link yyjson to your target
-target_link_libraries(ctensors PRIVATE yyjson)
+target_link_libraries(safetensors PRIVATE yyjson)
 
-if(${CTENSORS_BUILD_EXAMPLES})
-    add_executable(ctensors_read_example examples/read.c)
-    target_link_libraries(ctensors_read_example PRIVATE ctensors)
+if(${SAFETENSORS_BUILD_EXAMPLES})
+    add_executable(safetensors_read_example examples/read.c)
+    target_link_libraries(safetensors_read_example PRIVATE safetensors)
 
-    add_executable(ctensors_mmap_example examples/mmap.c)
-    target_link_libraries(ctensors_mmap_example PRIVATE ctensors)
+    add_executable(safetensors_mmap_example examples/mmap.c)
+    target_link_libraries(safetensors_mmap_example PRIVATE safetensors)
 endif()

@@ -106,8 +106,8 @@ struct safetensors_tensor
     enum safetensors_dtype dtype;
     uint8_t rank;
     uint32_t *shape;
-    uint64_t start;
-    uint64_t end;
+    size_t start;
+    size_t end;
 };
 
 /// Holds the tensor definitions table

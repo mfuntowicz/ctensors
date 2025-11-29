@@ -18,7 +18,6 @@ struct safetensors_status safetensors_table_read(
     if (!safetensors_is_ok(status))
         return status;
 
-    // Sort table keys
-    qsort(table->tensors, table->num_tensors, sizeof(struct safetensors_tensor), compare_strings);
+    // TODO: Sorting to faster retrieval?
     return SAFETENSORS_SUCCEEDED;
 }

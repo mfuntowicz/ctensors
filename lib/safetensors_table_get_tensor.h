@@ -11,6 +11,6 @@
 /// @param table Table holding all the tensors
 /// @param name Null-terminated tensor's name to look for
 /// @return
-struct safetensors_tensor *safetensors_table_get_tensor(const struct safetensors_table *table, const char *name);
+const struct safetensors_tensor *safetensors_table_get_tensor(const struct safetensors_table *table, const char *name);
 
 #endif //SAFETENSORS_GET_TENSOR_H

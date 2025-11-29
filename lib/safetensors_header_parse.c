@@ -40,12 +40,11 @@ enum safetensors_status_code safetensors_header_parse_offsets(
             yyjson_val* start_val = yyjson_arr_get(offsets, 0);
             yyjson_val* end_val = yyjson_arr_get(offsets, 1);
 
-            if (yyjson_is_uint(start_val)) {
+            if (yyjson_is_uint(start_val))
                 tensor->start = yyjson_get_uint(start_val);
-            }
-            if (yyjson_is_uint(end_val)) {
+
+            if (yyjson_is_uint(end_val))
                 tensor->end = yyjson_get_uint(end_val);
-            }
 
             return SAFETENSORS_SUCCESS;
         }
@@ -76,9 +75,8 @@ enum safetensors_status_code safetensors_header_parse_shape(
             size_t shape_idx = 0, shape_max = 0;
             yyjson_val* dim_val;
             yyjson_arr_foreach(shape, shape_idx, shape_max, dim_val) {
-                if (yyjson_is_uint(dim_val)) {
+                if (yyjson_is_uint(dim_val))
                     tensor->shape[shape_idx] = (uint32_t)yyjson_get_uint(dim_val);
-                }
             }
             return SAFETENSORS_SUCCESS;
         } else {
@@ -143,10 +141,12 @@ struct safetensors_status safetensors_header_parse(
     size_t idx, max;
     yyjson_val *key, *val;
     yyjson_obj_foreach(root, idx, max, key, val) {
+
         const char *keyval = yyjson_get_str(key);
+        const bool is_metadata = strcmp(keyval, "__metadata__") == 0;
 
         // Skip __metadata__ if the flag is set
-        if (strcmp(keyval, "__metadata__") == 0)
+        if (is_metadata)
             if (!(flags & safetensors_skip_metadata)) { /* TODO: Not implemented yet */ }
 
         // Create the final tensor name with a null-terminator string to allow usage of str functions like strncmp
@@ -161,21 +161,24 @@ struct safetensors_status safetensors_header_parse(
         strncpy(table->names[idx], keyval, name_len);
 
         // Parse tensor object
-        if (!yyjson_is_obj(val)) {
-            status.what = SAFETENSORS_HEADER_INVALID;
-            status.message = "Expected JSON object";
-            goto freeup_and_return;
+        if (!is_metadata)
+        {
+            if (!yyjson_is_obj(val)) {
+                status.what = SAFETENSORS_HEADER_INVALID;
+                status.message = "Expected JSON object";
+                goto freeup_and_return;
+            }
+
+            if (safetensors_header_parse_tensor(val, table->tensors + idx, &status) != SAFETENSORS_SUCCESS)
+                goto freeup_and_return;
+
+
+            const auto tensor = table->tensors[idx];
+            printf(
+                "Discovered tensor %s (%s) -> start: %lu, end: %lu\n",
+                table->names[idx], safetensors_dtype_as_str(tensor.dtype), tensor.start, tensor.end
+            );
         }
-
-        if (safetensors_header_parse_tensor(val, table->tensors + idx, &status) != SAFETENSORS_SUCCESS)
-            goto freeup_and_return;
-
-
-        const auto tensor = table->tensors[idx];
-        printf(
-            "Discovered tensor %s (%s) -> start: %lu, end: %lu\n",
-            table->names[idx], safetensors_dtype_as_str(tensor.dtype), tensor.start, tensor.end);
-
     }
 
     return SAFETENSORS_SUCCEEDED;

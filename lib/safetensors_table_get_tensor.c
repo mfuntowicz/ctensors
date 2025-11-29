@@ -16,12 +16,16 @@ int find_tensor_by_name(const void* key, const void* name)
 }
 
 
-struct safetensors_tensor *safetensors_table_get_tensor(const struct safetensors_table *table, const char* name)
+const struct safetensors_tensor *safetensors_table_get_tensor(const struct safetensors_table *table, const char* name)
 {
     if (table->num_tensors > 0)
     {
         const auto names = table->names;
-        return bsearch(name, names, table->num_tensors, sizeof(char *), find_tensor_by_name);
+        for (auto i = 0; i < table->num_tensors; ++i)
+        {
+            if (strcmp(names[i], name) == 0)
+                return table->tensors + i;
+        }
     }
 
     return nullptr;
